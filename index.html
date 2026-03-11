@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>බොන්නද? 🥃 AI Drink Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Lobster&family=Noto+Sans+Sinhala:wght@400;700;900&family=Oswald:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--amber:#FF8C00;--gold:#FFD700;--dark:#0d0a06;--card:#1a1208;--red:#ff3b3b;--green:#00ff88;--text:#f5e6c8;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--dark);color:var(--text);font-family:'Oswald','Noto Sans Sinhala',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(255,140,0,.07) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(255,60,0,.05) 0%,transparent 50%),radial-gradient(ellipse at 60% 80%,rgba(200,100,0,.06) 0%,transparent 50%);animation:bgP 8s ease-in-out infinite alternate;pointer-events:none;z-index:0;}
+  @keyframes bgP{0%{opacity:.5}100%{opacity:1}}
+  .wrap{max-width:940px;margin:0 auto;padding:0 20px;position:relative;z-index:1;}
+
+  /* SETUP */
+  #setup{background:linear-gradient(135deg,rgba(255,59,59,.15),rgba(255,140,0,.1));border:1px solid rgba(255,140,0,.4);border-radius:16px;padding:28px;margin:20px 0;display:none;}
+  #setup h3{color:var(--amber);margin-bottom:10px;font-size:1rem;letter-spacing:2px;}
+  #setup p{color:rgba(245,230,200,.75);font-size:.92rem;line-height:1.8;margin-bottom:14px;font-family:'Noto Sans Sinhala',sans-serif;}
+  #setup a{color:var(--gold);text-decoration:underline;}
+  #setup code{background:rgba(255,140,0,.15);padding:2px 7px;border-radius:4px;font-size:.85rem;}
+  .krow{display:flex;gap:10px;flex-wrap:wrap;}
+  .krow input{flex:1;min-width:220px;background:rgba(0,0,0,.4);border:1px solid rgba(255,140,0,.3);color:var(--text);padding:12px 16px;border-radius:10px;font-family:monospace;font-size:.85rem;}
+  .krow input:focus{outline:none;border-color:var(--amber);}
+  .btnk{padding:12px 24px;background:linear-gradient(135deg,var(--amber),#ff4500);border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer;font-family:'Oswald',sans-serif;white-space:nowrap;transition:.3s;}
+  .btnk:hover{opacity:.85;}
+
+  /* HEADER */
+  header{text-align:center;padding:50px 20px 30px;}
+  .logo{font-size:5rem;display:block;animation:sw 3s ease-in-out infinite;filter:drop-shadow(0 0 20px var(--amber));}
+  @keyframes sw{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+  header h1{font-family:'Lobster',cursive;font-size:clamp(2.5rem,8vw,5rem);background:linear-gradient(135deg,var(--gold),var(--amber),#ff6b00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;letter-spacing:2px;}
+  .tagline{font-family:'Noto Sans Sinhala',sans-serif;color:rgba(245,230,200,.6);font-size:.95rem;margin-top:8px;letter-spacing:2px;}
+  .badge{display:inline-block;margin-top:12px;background:rgba(255,140,0,.12);border:1px solid rgba(255,140,0,.3);border-radius:100px;padding:6px 18px;font-size:.72rem;letter-spacing:2px;color:var(--amber);font-family:'Oswald',sans-serif;}
+
+  /* FORM CARD */
+  .card{background:var(--card);border:1px solid rgba(255,140,0,.2);border-radius:20px;padding:35px;margin:20px 0;box-shadow:0 0 60px rgba(255,140,0,.05),inset 0 1px 0 rgba(255,255,255,.05);}
+  .sec{font-family:'Noto Sans Sinhala',sans-serif;color:var(--amber);font-size:.72rem;letter-spacing:4px;text-transform:uppercase;margin:28px 0 16px;display:flex;align-items:center;gap:10px;}
+  .sec:first-child{margin-top:0;}
+  .sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,140,0,.4),transparent);}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:640px){.g2{grid-template-columns:1fr;}.card{padding:20px;}}
+  .field{margin-bottom:18px;}
+  label{display:block;font-size:.68rem;letter-spacing:2px;color:rgba(245,230,200,.45);text-transform:uppercase;margin-bottom:8px;font-family:'Noto Sans Sinhala',sans-serif;}
+  select{width:100%;background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.2);color:var(--text);padding:12px 40px 12px 14px;border-radius:10px;font-family:'Noto Sans Sinhala','Oswald',sans-serif;font-size:.92rem;cursor:pointer;transition:all .3s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23FF8C00' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:12px;}
+  select:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,140,0,.1);}
+  select option{background:#1a1208;}
+
+  /* CHIPS */
+  .chips{display:flex;flex-wrap:wrap;gap:9px;}
+  .chip{padding:7px 16px;border-radius:100px;border:1.5px solid rgba(255,140,0,.22);background:transparent;color:rgba(245,230,200,.55);font-family:'Noto Sans Sinhala','Oswald',sans-serif;font-size:.82rem;cursor:pointer;transition:all .22s;white-space:nowrap;}
+  .chip:hover{border-color:var(--amber);color:var(--amber);}
+  .chip.on{background:linear-gradient(135deg,var(--amber),#ff6000);border-color:transparent;color:#000;font-weight:700;box-shadow:0 4px 18px rgba(255,140,0,.28);}
+
+  /* SUBMIT */
+  .btngo{width:100%;padding:20px;background:linear-gradient(135deg,#ff8c00,#ff4500);border:none;border-radius:14px;color:#000;font-family:'Noto Sans Sinhala','Oswald',sans-serif;font-size:1.15rem;font-weight:900;letter-spacing:2px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;margin-top:14px;}
+  .btngo::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:.5s;}
+  .btngo:hover::before{left:100%;}
+  .btngo:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(255,140,0,.4);}
+
+  /* LOADING */
+  #loading{display:none;text-align:center;padding:60px 20px;}
+  .spin{font-size:4rem;display:block;animation:spin 1s linear infinite;margin-bottom:20px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #loading p{color:var(--amber);font-size:1.1rem;font-family:'Noto Sans Sinhala',sans-serif;animation:pu 1.5s ease-in-out infinite;}
+  @keyframes pu{0%,100%{opacity:.6}50%{opacity:1}}
+
+  /* RESULT */
+  #result{display:none;background:var(--card);border:1px solid rgba(255,140,0,.3);border-radius:20px;padding:35px;margin:20px 0;box-shadow:0 0 80px rgba(255,140,0,.1);animation:fu .6s ease;}
+  @keyframes fu{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+  #rc{font-family:'Noto Sans Sinhala',sans-serif;line-height:1.95;font-size:1rem;color:var(--text);}
+  #rc h2{font-family:'Lobster',cursive;font-size:1.8rem;color:var(--gold);margin:20px 0 10px;}
+  #rc h3{color:var(--amber);font-size:1.05rem;margin:18px 0 7px;letter-spacing:1px;font-family:'Oswald',sans-serif;text-transform:uppercase;}
+  #rc .drink-hero{text-align:center;font-size:5rem;margin:20px 0;filter:drop-shadow(0 0 30px var(--amber));animation:sw 3s ease-in-out infinite;display:block;}
+  #rc .drink-name{text-align:center;font-family:'Lobster',cursive;font-size:2.4rem;background:linear-gradient(135deg,var(--gold),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  #rc .hbox{background:rgba(255,140,0,.08);border-left:4px solid var(--amber);border-radius:0 10px 10px 0;padding:16px 20px;margin:14px 0;}
+  #rc .wbox{background:rgba(255,59,59,.08);border-left:4px solid var(--red);border-radius:0 10px 10px 0;padding:16px 20px;margin:14px 0;}
+  #rc .sbox{background:rgba(0,255,136,.06);border-left:4px solid var(--green);border-radius:0 10px 10px 0;padding:16px 20px;margin:14px 0;}
+  #rc .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:18px 0;}
+  #rc .si{background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.15);border-radius:12px;padding:14px;text-align:center;}
+  #rc .sn{font-size:1.7rem;font-family:'Lobster',cursive;color:var(--gold);display:block;}
+  #rc .sl{font-size:.72rem;color:rgba(245,230,200,.45);letter-spacing:1px;text-transform:uppercase;font-family:'Oswald',sans-serif;}
+  #rc .div{border:none;height:1px;background:linear-gradient(90deg,transparent,rgba(255,140,0,.3),transparent);margin:22px 0;}
+  .btnag{display:none;margin:20px auto 0;padding:13px 38px;background:transparent;border:1.5px solid var(--amber);color:var(--amber);border-radius:100px;font-family:'Noto Sans Sinhala',sans-serif;font-size:.95rem;cursor:pointer;transition:all .3s;letter-spacing:2px;}
+  .btnag:hover{background:var(--amber);color:#000;}
+  footer{text-align:center;padding:30px 20px;color:rgba(245,230,200,.22);font-size:.72rem;letter-spacing:2px;font-family:'Oswald',sans-serif;line-height:2;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- SETUP BANNER -->
+  <div id="setup">
+    <h3>⚙️ එක වතාවක් පමණයි! &mdash; ONE-TIME SETUP</h3>
+    <p>
+      මේ app එකට <strong>Groq API key</strong> එකක් ඕනෙ &mdash; <strong>100% නොමිලේ!</strong> Credit card ඕනෙ නෑ!<br>
+      1. <a href="https://console.groq.com" target="_blank">console.groq.com</a> &rarr; Sign up (Google login හරිනවා)<br>
+      2. <strong>"API Keys"</strong> &rarr; <strong>"Create API Key"</strong> &rarr; Copy කරන්න<br>
+      3. Key එක <code>gsk_...</code> කියලා පටන් ගන්නවා &mdash; ඒක පහළ paste කරන්න
+    </p>
+    <div class="krow">
+      <input type="password" id="kin" placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxx" />
+      <button class="btnk" onclick="saveKey()">&#10003; Save!</button>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <span class="logo">&#x1F943;</span>
+    <h1>බොන්නද?</h1>
+    <p class="tagline">AI Drink Advisor &middot; ඔබේ රස දන්නා AI මිතුරා</p>
+    <span class="badge">&#10022; කරුණු 20ක් &middot; 20 Smart Facts &#10022;</span>
+  </header>
+
+  <!-- FORM -->
+  <div class="card" id="form-section">
+
+    <!-- 1 & 2 -->
+    <p class="sec">&#127757; රට සහ කාලගුණය</p>
+    <div class="g2">
+      <div class="field">
+        <label>රට (Country)</label>
+        <select id="country">
+          <option value="Sri Lanka">&#127473;&#127472; ශ්‍රී ලංකාව</option>
+          <option value="United Kingdom">&#127468;&#127463; එංගලන්තය</option>
+          <option value="Germany">&#127465;&#127466; ජර්මනිය</option>
+          <option value="Japan">&#127471;&#127477; ජපානය</option>
+          <option value="Mexico">&#127474;&#127485; මෙක්සිකෝ</option>
+          <option value="Russia">&#127479;&#127482; රුසියාව</option>
+          <option value="India">&#127470;&#127475; ඉන්දියාව</option>
+          <option value="USA">&#127482;&#127480; ඇමෙරිකාව</option>
+          <option value="France">&#127467;&#127479; ප්‍රංශය</option>
+          <option value="Australia">&#127462;&#127482; ඕස්ට්‍රේලියාව</option>
+          <option value="Thailand">&#127481;&#127469; තායිලන්තය</option>
+          <option value="Dubai UAE">&#127462;&#127466; දුබායි</option>
+          <option value="South Korea">&#127472;&#127479; කොරියාව</option>
+          <option value="Italy">&#127470;&#127481; ඉතාලිය</option>
+          <option value="Brazil">&#127463;&#127479; බ්‍රසීලය</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>කාලගුණය (Weather)</label>
+        <select id="weather">
+          <option value="Hot and humid">&#129397; රස්නේ හා තෙත් (Hot &amp; Humid)</option>
+          <option value="Cool and pleasant">&#128522; සිසිල් හා සහ ප්‍රසන්න</option>
+          <option value="Very cold freezing">&#129397; දඩා ශීතල (Freezing)</option>
+          <option value="Rainy stormy">&#127783; වැසි (Rainy)</option>
+          <option value="Perfect sunny">&#9728; හොඳ හිරු දිනයක්</option>
+          <option value="Cloudy grey">&#9729; වළාකුළු (Cloudy)</option>
+          <option value="Windy">&#127788; සුළං (Windy)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 3 & 4 -->
+    <p class="sec">&#8987; වේලාව සහ ස්ථානය</p>
+    <div class="g2">
+      <div class="field">
+        <label>දවසේ වේලාව</label>
+        <div class="chips" id="time-g">
+          <button class="chip on"  data-v="Morning brunch">&#127748; උදෑසන</button>
+          <button class="chip"     data-v="Afternoon daytime">&#9728; දවල්</button>
+          <button class="chip"     data-v="Sunset evening">&#127749; හවස</button>
+          <button class="chip"     data-v="Night">&#127769; රෑ</button>
+          <button class="chip"     data-v="Late night after midnight">&#127761; මැදියම් රෑ</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>ස්ථානය</label>
+        <div class="chips" id="place-g">
+          <button class="chip on"  data-v="Indoor cozy home">&#127968; නිවසේ</button>
+          <button class="chip"     data-v="Bar or pub">&#127866; Bar / Pub</button>
+          <button class="chip"     data-v="Outdoor garden">&#127795; බාහිර</button>
+          <button class="chip"     data-v="Beach seaside">&#127958; මුහුද</button>
+          <button class="chip"     data-v="Rooftop">&#127750; Rooftop</button>
+          <button class="chip"     data-v="Restaurant fine dining">&#127869; Restaurant</button>
+          <button class="chip"     data-v="Club nightclub">&#127926; Club</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <p class="sec">&#128101; කාත් එක්ක?</p>
+    <div class="field">
+      <div class="chips" id="with-g">
+        <button class="chip on"  data-v="Close best friends">&#128107; යාළුවෝ</button>
+        <button class="chip"     data-v="Romantic partner date">&#128145; Partner</button>
+        <button class="chip"     data-v="Drinking alone solo">&#129333; තනියම</button>
+        <button class="chip"     data-v="Office work colleagues">&#128188; Office</button>
+        <button class="chip"     data-v="Big group party">&#127881; Party Group</button>
+        <button class="chip"     data-v="Family adults">&#128106; පවුලේ</button>
+        <button class="chip"     data-v="New people socializing">&#129309; අලුත් අය</button>
+        <button class="chip"     data-v="Sports team celebrating">&#9917; Sports Team</button>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <p class="sec">&#127866; ඔබ මොන වර්ගයේ?</p>
+    <div class="field">
+      <div class="chips" id="type-g">
+        <button class="chip on"  data-v="Casual social drinker">&#128522; සමාජශීලී</button>
+        <button class="chip"     data-v="Beer enthusiast">&#127866; Beer Fan</button>
+        <button class="chip"     data-v="Whisky connoisseur">&#129347; Whisky Pro</button>
+        <button class="chip"     data-v="Cocktail creative lover">&#127865; Cocktail Freak</button>
+        <button class="chip"     data-v="Wine lover">&#127863; Wine Lover</button>
+        <button class="chip"     data-v="Shot hardcore drinker">&#128128; Hard Core</button>
+        <button class="chip"     data-v="First time drinker">&#128994; ප්‍රථමවරට</button>
+        <button class="chip"     data-v="Health conscious light">&#129949; Health Conscious</button>
+      </div>
+    </div>
+
+    <!-- 7 -->
+    <p class="sec">&#128565; ඕනෑ Feeling?</p>
+    <div class="field">
+      <div class="chips" id="mood-g">
+        <button class="chip on"  data-v="Calm relaxed chill">&#128524; සන්සුන් / Chill</button>
+        <button class="chip"     data-v="Fly high euphoric">&#128640; Fly High! / බුදි</button>
+        <button class="chip"     data-v="Sad down comfort">&#128532; දුකයි / Sad</button>
+        <button class="chip"     data-v="High energy party">&#9889; ශක්තිය!</button>
+        <button class="chip"     data-v="Romantic sensual">&#128149; Romantic</button>
+        <button class="chip"     data-v="Forget everything numb">&#127754; සියල්ල අමතක!</button>
+        <button class="chip"     data-v="Celebrate achievement">&#127942; Celebrate!</button>
+        <button class="chip"     data-v="Creative inspired">&#127912; Creative</button>
+      </div>
+    </div>
+
+    <!-- 8 -->
+    <p class="sec">&#128176; Budget</p>
+    <div class="field">
+      <div class="chips" id="budget-g">
+        <button class="chip on"  data-v="Budget under 5000 LKR">&#128181; Budget (&lt;5000)</button>
+        <button class="chip"     data-v="Mid 5000 to 10000 LKR">&#128179; Mid (5000-10000)</button>
+        <button class="chip"     data-v="Premium 10000 to 15000 LKR">&#128142; Premium (10k-15k)</button>
+        <button class="chip"     data-v="Luxury no limit">&#129297; No Limit!</button>
+      </div>
+    </div>
+
+    <!-- 9 -->
+    <p class="sec">&#9201; Party කොච්චර වෙලා?</p>
+    <div class="field">
+      <div class="chips" id="dur-g">
+        <button class="chip on"  data-v="Quick 1 to 2 hours">&#9889; 1-2 පැය</button>
+        <button class="chip"     data-v="Medium 3 to 4 hours">&#128293; 3-4 පැය</button>
+        <button class="chip"     data-v="All night long">&#127769; රෑ පුරා</button>
+        <button class="chip"     data-v="Weekend multi day">&#127882; Weekend!</button>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <p class="sec">&#128663; Drive කරන්නද?</p>
+    <div class="field">
+      <div class="chips" id="drive-g">
+        <button class="chip on"  data-v="Not driving safe">&#9989; Drive නෑ</button>
+        <button class="chip"     data-v="Maybe driving later">&#9888; සමහරවිට</button>
+        <button class="chip"     data-v="Driving soon">&#128663; ඉක්මනින් Drive</button>
+      </div>
+    </div>
+
+    <!-- 11 -->
+    <p class="sec">&#127869; ආමාශය &mdash; කෑවාද?</p>
+    <div class="field">
+      <div class="chips" id="food-g">
+        <button class="chip on"  data-v="Full stomach just ate">&#127859; බඩ පිරිලා</button>
+        <button class="chip"     data-v="Light snacks eaten">&#129372; ටිකක් කෑවා</button>
+        <button class="chip"     data-v="Empty stomach nothing">&#128566; කිසිම දෙයක් කෑ නෑ</button>
+        <button class="chip"     data-v="Eating while drinking">&#127869; කමින් ඉන්නවා</button>
+      </div>
+    </div>
+
+    <!-- 12 -->
+    <p class="sec">&#127973; සෞඛ්‍ය තත්ත්වය</p>
+    <div class="field">
+      <div class="chips" id="health-g">
+        <button class="chip on"  data-v="Perfectly healthy">&#128170; සම්පූර්ණ හොඳයි</button>
+        <button class="chip"     data-v="Slight headache tired">&#128549; ටිකක් හිස රදයි</button>
+        <button class="chip"     data-v="Recovering from illness">&#129298; සුව ලබමින්</button>
+        <button class="chip"     data-v="Diabetic or blood pressure">&#128138; දියවැඩියාව / BP</button>
+        <button class="chip"     data-v="On medication">&#128137; බෙහෙත් ගන්නවා</button>
+      </div>
+    </div>
+
+    <!-- 13 -->
+    <p class="sec">&#127881; අවස්ථාව (Occasion)</p>
+    <div class="field">
+      <div class="chips" id="occ-g">
+        <button class="chip on"  data-v="Casual just chilling">&#128526; සාමාන්‍ය ගැළපීමක්</button>
+        <button class="chip"     data-v="Birthday celebration">&#127874; උපන් දිනය</button>
+        <button class="chip"     data-v="Wedding reception">&#128141; විවාහ මංගල්‍ය</button>
+        <button class="chip"     data-v="Work promotion success">&#127942; ජය ගැනීමක්</button>
+        <button class="chip"     data-v="Breakup heartbreak recovery">&#128148; Breakup</button>
+        <button class="chip"     data-v="Holiday vacation">&#127958; නිවාඩු</button>
+        <button class="chip"     data-v="Sports watching event">&#9917; ක්‍රීඩා</button>
+        <button class="chip"     data-v="New Year festival">&#127878; අලුත් අවුරුද්ද</button>
+      </div>
+    </div>
+
+    <!-- 14 -->
+    <p class="sec">&#127925; Music / Vibe</p>
+    <div class="field">
+      <div class="chips" id="music-g">
+        <button class="chip on"  data-v="Quiet no music">&#128263; නිශ්ශබ්ද</button>
+        <button class="chip"     data-v="Baila and Sinhala pop">&#129345; Baila / Sinhala</button>
+        <button class="chip"     data-v="EDM house club">&#127911; EDM / Club</button>
+        <button class="chip"     data-v="Hip hop RnB">&#127908; Hip Hop</button>
+        <button class="chip"     data-v="Rock and metal">&#127927; Rock / Metal</button>
+        <button class="chip"     data-v="Jazz lounge chill">&#127927; Jazz</button>
+        <button class="chip"     data-v="Bollywood Indian">&#129338; Bollywood</button>
+      </div>
+    </div>
+
+    <!-- 15 -->
+    <p class="sec">&#129380; Mix කරනවාද?</p>
+    <div class="field">
+      <div class="chips" id="mix-g">
+        <button class="chip on"  data-v="Neat no mixer pure">&#129347; Pure / Neat</button>
+        <button class="chip"     data-v="On the rocks ice only">&#129482; Ice විතරක්</button>
+        <button class="chip"     data-v="Soda or tonic water">&#128167; Soda / Tonic</button>
+        <button class="chip"     data-v="Fruit juice mixer">&#127819; Juice Mix</button>
+        <button class="chip"     data-v="Energy drink mixer">&#9889; Energy Drink</button>
+        <button class="chip"     data-v="Cocktail fancy mixed">&#127865; Cocktail Style</button>
+      </div>
+    </div>
+
+    <!-- 16 -->
+    <p class="sec">&#128101; කණ්ඩායමේ ප්‍රමාණය</p>
+    <div class="field">
+      <div class="chips" id="size-g">
+        <button class="chip on"  data-v="Solo just me 1 person">&#128587; 1 (තනියම)</button>
+        <button class="chip"     data-v="Two people couple">&#128107; 2 (යුවළ)</button>
+        <button class="chip"     data-v="Small group 3 to 5">&#128101; 3-5</button>
+        <button class="chip"     data-v="Medium group 6 to 10">&#127881; 6-10</button>
+        <button class="chip"     data-v="Large group over 10">&#127967; 10+ (විශාල)</button>
+      </div>
+    </div>
+
+    <!-- 17 -->
+    <p class="sec">&#128170; Alcohol Tolerance</p>
+    <div class="field">
+      <div class="chips" id="tol-g">
+        <button class="chip on"  data-v="Very low tolerance newbie">&#127807; ඉතා අඩු</button>
+        <button class="chip"     data-v="Low moderate tolerance">&#128522; සාමාන්‍ය</button>
+        <button class="chip"     data-v="High tolerance experienced">&#128170; ඉහළ</button>
+        <button class="chip"     data-v="Very high can drink a lot">&#128293; ඉතා ඉහළ</button>
+      </div>
+    </div>
+
+    <!-- 18 -->
+    <p class="sec">&#128197; හෙට දවස?</p>
+    <div class="field">
+      <div class="chips" id="tmrw-g">
+        <button class="chip on"  data-v="Free day tomorrow holiday">&#128526; නිදහස් දිනයක්</button>
+        <button class="chip"     data-v="Important work meeting tomorrow">&#128556; හෙට වැදගත් කාර්‍යයක්</button>
+        <button class="chip"     data-v="Exam or interview tomorrow">&#128203; විභාගයක් / Interview</button>
+        <button class="chip"     data-v="Normal work day tomorrow">&#128188; සාමාන්‍ය කාර්‍යාල</button>
+      </div>
+    </div>
+
+    <!-- 19 -->
+    <p class="sec">&#129385; Snack Preference</p>
+    <div class="field">
+      <div class="chips" id="snack-g">
+        <button class="chip on"  data-v="Spicy Sri Lankan isso wade deviled">&#127798; Sri Lankan (ඉස්සෝ / Deviled)</button>
+        <button class="chip"     data-v="Western chips nuts bar snacks">&#127839; Western Snacks</button>
+        <button class="chip"     data-v="Grilled BBQ meat">&#129385; BBQ / Grilled</button>
+        <button class="chip"     data-v="Sushi Japanese finger food">&#127843; Japanese / Sushi</button>
+        <button class="chip"     data-v="No snacks drinking only">&#128683; Snack නෑ</button>
+        <button class="chip"     data-v="Cheese and charcuterie board">&#129472; Cheese Board</button>
+      </div>
+    </div>
+
+    <!-- 20 -->
+    <p class="sec">&#129323; ඇත්ත ඇත්තටම &mdash; ඇයි බොන්නේ?</p>
+    <div class="field">
+      <div class="chips" id="why-g">
+        <button class="chip on"  data-v="Just for fun enjoyment">&#128514; Just for fun!</button>
+        <button class="chip"     data-v="Stress relief work pressure">&#128548; Stress relief</button>
+        <button class="chip"     data-v="Social pressure friends invited">&#128107; යාළුවෝ ඇරියා</button>
+        <button class="chip"     data-v="Heartbreak emotional pain">&#128148; හදවත රිදිලා</button>
+        <button class="chip"     data-v="Celebrating good news">&#127881; Good News!</button>
+        <button class="chip"     data-v="Boredom nothing to do">&#129393; කම්මැලිකම</button>
+        <button class="chip"     data-v="First time curious trying">&#129321; ඉවක් දැනෙනවා</button>
+      </div>
+    </div>
+
+    <button class="btngo" onclick="go()">
+      &#129347; AI කියන්නකෝ &mdash; දැන් බොන්නේ මොකක්ද?!
+    </button>
+
+  </div><!-- /card -->
+
+  <!-- LOADING -->
+  <div id="loading">
+    <span class="spin">&#129347;</span>
+    <p>AI දෙව්වරු හිතනවා... ටිකක් ඉඳලා ගහමු! &#129300;</p>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result">
+    <div id="rc"></div>
+    <center><button class="btnag" id="btnag" onclick="again()">&#128260; තව බොමු! Try Again</button></center>
+  </div>
+
+  <footer>
+    &#127866; බොන්නද? AI &nbsp;&middot;&nbsp; Powered by Groq + Llama 3.3 &nbsp;&middot;&nbsp; Free &amp; Open<br>
+    18+ ONLY &nbsp;&middot;&nbsp; බීලා Drive නොකරන්න &nbsp;&middot;&nbsp; Drink Responsibly
+  </footer>
+</div>
+
+<script>
+const KS='bonnadai_v3';
+const gk=()=>localStorage.getItem(KS)||'';
+
+function saveKey(){
+  const k=document.getElementById('kin').value.trim();
+  if(!k.startsWith('gsk_')){alert('Key එක හරිනෑ! "gsk_" කියලා පටන් ගන්නවා.');return;}
+  localStorage.setItem(KS,k);
+  document.getElementById('setup').style.display='none';
+  alert('Key save කළා! දැන් බොමු!');
+}
+
+window.addEventListener('load',()=>{
+  if(!gk()) document.getElementById('setup').style.display='block';
+});
+
+document.querySelectorAll('.chips').forEach(g=>{
+  g.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      g.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+    });
+  });
+});
+
+const cv=id=>{const a=document.querySelector('#'+id+' .chip.on');return a?a.dataset.v:'';};
+
+async function go(){
+  const key=gk();
+  if(!key){
+    document.getElementById('setup').style.display='block';
+    document.getElementById('setup').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const d={
+    country:document.getElementById('country').value,
+    weather:document.getElementById('weather').value,
+    time:cv('time-g'),place:cv('place-g'),company:cv('with-g'),
+    drinker:cv('type-g'),mood:cv('mood-g'),budget:cv('budget-g'),
+    duration:cv('dur-g'),drive:cv('drive-g'),food:cv('food-g'),
+    health:cv('health-g'),occasion:cv('occ-g'),music:cv('music-g'),
+    mixer:cv('mix-g'),groupsz:cv('size-g'),tolerance:cv('tol-g'),
+    tomorrow:cv('tmrw-g'),snack:cv('snack-g'),why:cv('why-g')
+  };
+
+  document.getElementById('form-section').style.display='none';
+  document.getElementById('loading').style.display='block';
+  document.getElementById('result').style.display='none';
+
+  const driveWarn=d.drive.includes('Driving')||d.drive.includes('Maybe')?
+    `<div class="wbox"><h3>&#128663; DRIVE WARNING!</h3>[IMPORTANT: Strong, caring warning in Sinhala+English. Never drink and drive. Reference PickMe and Uber alternatives. Tone: firm but friendly]</div>`:'';
+
+  const prompt=`You are "බොන්නද? AI" — Sri Lanka's funniest and wisest AI alcohol advisor. You speak in a lively MIX of Sinhala (Sinhala unicode script) and English, like a witty caring best friend at a party. Use Sinhala slang freely: "මචං", "යකෝ", "ගෙදර", "සුපිරි", "පට්ට", "ලොකු", "ගමේ", "හිතේ", "fire!", "අනේ", "දෙයියනේ" etc.
+
+User 20-factor profile:
+1. Country: ${d.country}
+2. Weather: ${d.weather}
+3. Time of day: ${d.time}
+4. Venue/Location: ${d.place}
+5. Company: ${d.company}
+6. Drinker type: ${d.drinker}
+7. Desired mood/feeling: ${d.mood}
+8. Budget: ${d.budget}
+9. Session duration: ${d.duration}
+10. Driving situation: ${d.drive}
+11. Stomach/food status: ${d.food}
+12. Health status: ${d.health}
+13. Occasion: ${d.occasion}
+14. Music preference: ${d.music}
+15. Mixer preference: ${d.mixer}
+16. Group size: ${d.groupsz}
+17. Alcohol tolerance: ${d.tolerance}
+18. Tomorrow's plans: ${d.tomorrow}
+19. Snack preference: ${d.snack}
+20. Real reason for drinking: ${d.why}
+
+Respond ONLY with valid HTML. Use EXACTLY these CSS class names (no markdown fences, no extra text outside HTML):
+
+<span class="drink-hero">[BEST DRINK EMOJI]</span>
+<div class="drink-name">[DRINK NAME — English + Sinhala if possible]</div>
+
+<div class="hbox">
+<h3>&#129347; AI ගේ Pick — ඇයි මේ Drink?</h3>
+[3-4 enthusiastic Sinhala+English sentences explaining WHY this drink is perfect, referencing specific factors from the profile like country, weather, health, occasion, tomorrow's plans etc. Be specific and fun!]
+</div>
+
+<h3>&#128202; Details</h3>
+<div class="sgrid">
+  <div class="si"><span class="sn">[QTY]</span><span class="sl">Glasses/Shots</span></div>
+  <div class="si"><span class="sn">[ABV%]</span><span class="sl">Alcohol %</span></div>
+  <div class="si"><span class="sn">[LKR price]</span><span class="sl">Price LKR</span></div>
+  <div class="si"><span class="sn">[e.g. 2h]</span><span class="sl">Sweet Spot</span></div>
+  <div class="si"><span class="sn">[cal]</span><span class="sl">Calories</span></div>
+</div>
+
+<hr class="div">
+
+<h3>&#127865; බොන්නේ හැටි — How to Drink</h3>
+<div class="hbox">
+[Specific drinking instructions matched to their mixer pref (${d.mixer}). Glass type, temperature, pacing, chasers. Creative and detailed. Fun Sinhala+English!]
+</div>
+
+<h3>&#127869; Snack Pairing</h3>
+<div class="hbox">
+[4 specific snacks matched to their preference (${d.snack}). Include Sri Lankan options where relevant (isso wade, deviled cashews, pol roti). Short fun descriptions!]
+</div>
+
+<h3>&#127925; Vibe Check</h3>
+[2-3 sentences about atmosphere matching their music (${d.music}) and occasion (${d.occasion}). Max Sinhala slang!]
+
+<hr class="div">
+
+${driveWarn}
+
+<h3>&#128565; අධික ලෙස ගත්තොත් — Overdose Warning</h3>
+<div class="wbox">
+[Specific overdose signs for THIS drink. Danger quantity for their tolerance (${d.tolerance}). Sinhala+English. Funny but genuinely accurate medical info!]
+</div>
+
+<div class="sbox">
+<h3>&#127973; Hangover Rescue Plan — හෙට උදෑසනට</h3>
+[DETAILED recovery plan. Structure:
+- Tonight before sleep: water ORS bread
+- Morning when you wake up: thambili king coconut, kanda rice porridge
+- Sri Lankan specific remedies
+- Timeline: wake up to noon
+- Special consideration for their tomorrow (${d.tomorrow})
+Funny AND genuinely useful. Sinhala+English!]
+</div>
+
+<hr class="div">
+
+<h3>&#127866; විකල්ප Drinks</h3>
+<div class="hbox">
+[Exactly 3 alternatives. Format: EMOJI <strong>Drink Name</strong> — one fun sentence why. Line break between each. Matched to their budget and drinker type.]
+</div>
+
+<div class="hbox">
+<h3>&#128161; Pro Tips — AI මාමාගේ රහස් &#128526;</h3>
+[Exactly 4 numbered tips (1. 2. 3. 4.) tailored to their specific combination of health (${d.health}), group size (${d.groupsz}), occasion (${d.occasion}) and why they're drinking (${d.why}). Max Sinhala slang!]
+</div>`;
+
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:2400,temperature:0.88,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'HTTP '+res.status);}
+    const data=await res.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+    const clean=raw.replace(/```html?|```/gi,'').trim();
+    document.getElementById('loading').style.display='none';
+    document.getElementById('result').style.display='block';
+    document.getElementById('rc').innerHTML=clean;
+    document.getElementById('btnag').style.display='inline-block';
+    document.getElementById('result').scrollIntoView({behavior:'smooth'});
+  }catch(err){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('result').style.display='block';
+    const isAuth=err.message.includes('401')||err.message.toLowerCase().includes('auth')||err.message.toLowerCase().includes('key');
+    document.getElementById('rc').innerHTML=`<div class="wbox"><h3>&#9888; Error</h3><p style="font-family:'Noto Sans Sinhala',sans-serif;margin-top:8px">${isAuth?'API Key එක හරිනෑ මචං! Key එක check කරලා අලුතෙන් save කරන්නකෝ.':'Error: '+err.message}</p>${isAuth?'<br><button class="btnk" style="margin-top:10px" onclick="document.getElementById(\'setup\').style.display=\'block\';again()">Fix API Key</button>':''}</div>`;
+    document.getElementById('btnag').style.display='inline-block';
+  }
+}
+
+function again(){
+  document.getElementById('form-section').style.display='block';
+  document.getElementById('result').style.display='none';
+  document.getElementById('btnag').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
